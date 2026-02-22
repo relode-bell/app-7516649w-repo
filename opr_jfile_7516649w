@@ -1,1 +1,122 @@
+pipeline {
+  agent any
+  stages {
+        stage('stg1-7516649w') {
+        steps {
+        echo 'stg1_7516649w: Preparation check passes'
+    }
+    }
+        stage('stg2-7516649w') {
+        steps {
+          sh '''#!/bin/bash
+          set -e
+          curl -Is http://localhost:33100 | head -n 1 > /tmp/testsvr-result-file
+          cat /tmp/testsvr-result-file
+          '''
+        script {
+          def line = sh(script: "cat /tmp/testsvr-result-file", returnStdout: true).trim()
+          if (line.contains("200")) {
+            echo "stg2_7516649w: testsvr’s website is running"
+          } else {
+            echo "stg2_7516649w: testsvr’s website is down"
+            error("Abort: testsvr website is down")
+      }
+      }
 
+        input('Proceed to update testsvr server?')
+      }
+    }
+    stage('stg3-7516649w') {
+        steps {
+        sh '''#!/bin/bash
+        set -e
+
+          docker rmi -f testsvr_image_7516649w || true
+          docker commit testsvr_7516649w testsvr_image_7516649w
+
+          puppet resource file /tmp/clone ensure=absent force=true;
+          puppet resource file /tmp/clone ensure=directory;
+          cd /tmp/clone;
+
+          git clone https://github.com/<YOUR_GITHUB_USERNAME>/app-7516649w-repo.git;
+
+          targets=testsvr_7516649w.localdomain;
+          locate_script='/tmp/clone/app-7516649w-repo/opr_script_7516649w';
+
+          bolt script run $locate_script -t $targets -u clientadm -p user123 --no-host-key-check --run-as root;
+          '''
+
+        echo 'stg3_7516649w: testsvr is backup and updated'
+      }
+    }
+    stage('stg4-7516649w') {
+      steps {
+        sh '''#!/bin/bash
+          set -e
+          curl -Is http://localhost:33100 | head -n 1 > /tmp/testsvr-result-file
+          cat /tmp/testsvr-result-file
+        '''
+        script {
+          def line = sh(script: "cat /tmp/testsvr-result-file", returnStdout: true).trim()
+          if (line.contains("200")) {
+            echo "stg4_7516649w: testsvr’s website is running after update"
+          } else {
+            echo "stg4_7516649w: testsvr’s website is down"
+            error("Abort: testsvr website is down after update")
+          }
+        }
+        input('Proceed to update appsvr server?')
+      }
+    }
+    stage('stg5-7516649w') {
+      steps {
+        sh '''#!/bin/bash
+          set -e
+
+          docker rmi -f appsvr_image_7516649w || true
+          docker commit appsvr_7516649w appsvr_image_7516649w
+
+          puppet resource file /tmp/clone ensure=absent force=true;
+          puppet resource file /tmp/clone ensure=directory;
+          cd /tmp/clone;
+
+          rm -rf app-7516649w-repo || true
+          git clone https://github.com/relode-bell/app-7516649w-repo.git;
+
+          targets=appsvr_7516649w.localdomain;
+          locate_script='/tmp/clone/app-7516649w-repo/opr_script_7516649w';
+
+          bolt script run $locate_script -t $targets -u clientadm -p user123 --no-host-key-check --run-as root;
+          '''
+
+        echo 'stg5_7516649w: appsvr web server is backup and updated'
+      }
+    }
+    stage('stg6-7516649w') {
+      steps {
+        sh '''#!/bin/bash
+          set -e
+          curl -Is http://localhost:33200 | head -n 1 > /tmp/appsvr-result-file
+          cat /tmp/appsvr-result-file
+          '''
+        script {
+          def line = sh(script: "cat /tmp/appsvr-result-file", returnStdout: true).trim()
+          if (line.contains("200")) {
+            echo "stg6_7516649w: appsvr website is operational"
+          } else {
+            def action = input(
+              message: "appsvr website is down. Choose an action:",
+              parameters: [choice(name: 'Action', choices: ['Trigger roll back', 'Troubleshooting'].join('\n'))]
+            )
+            if (action == 'Trigger roll back') {
+              echo "stg6_7516649w: Production website is rolling back"
+            } else if (action == 'Troubleshooting') {
+              echo "stg6_7516649w: Troubleshooting of Production website starts"
+            }
+            // Remark: Roll Back / Troubleshooting actual works is NOT required; pipeline ends here
+          }
+        }
+      }
+    }
+  }
+}
