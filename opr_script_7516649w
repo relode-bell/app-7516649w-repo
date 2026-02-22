@@ -10,14 +10,7 @@ puppet resource file /tmp/work/7516649w ensure=absent force=true
 puppet resource file /tmp/work/7516649w ensure=directory
 
 cd /tmp/work/7516649w
-echo "=== DEBUG START ==="
-pwd
-whoami
-echo "Listing /tmp/clone"
-ls -la /tmp/clone || true
-echo "Showing git clone line location"
-grep -n "git clone" -n -R /tmp/clone 2>/dev/null || true
-echo "=== DEBUG END ==="
+
 git clone https://github.com/relode-bell/app-7516649w-repo.git
 
 cp -p /tmp/work/7516649w/app-7516649w-repo/new_7516649w_index.html /var/www/html/index.html
