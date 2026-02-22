@@ -29,21 +29,23 @@ pipeline {
     stage('stg3-7516649w') {
         steps {
         sh '''#!/bin/bash
+        #!/bin/bash
         set -e
-
-          docker rmi -f testsvr_image_7516649w || true
-          docker commit testsvr_7516649w testsvr_image_7516649w
-
-          puppet resource file /tmp/clone ensure=absent force=true;
-          puppet resource file /tmp/clone ensure=directory;
-          cd /tmp/clone;
-
-          git clone https://github.com/<YOUR_GITHUB_USERNAME>/app-7516649w-repo.git;
-
-          targets=testsvr_7516649w.localdomain;
-          locate_script='/tmp/clone/app-7516649w-repo/opr_script_7516649w';
-
-          bolt script run $locate_script -t $targets -u clientadm -p user123 --no-host-key-check --run-as root;
+        
+        docker image inspect testsvr_image_7516649w:latest >/dev/null 2>&1 && docker rmi -f testsvr_image_7516649w:latest || true
+        
+        docker commit testsvr_7516649w testsvr_image_7516649w
+        
+        puppet resource file /tmp/clone_7516649w ensure=absent force=true;
+        puppet resource file /tmp/clone_7516649w ensure=directory;
+        cd /tmp/clone_7516649w;
+        
+        git clone https://github.com/relode-bell/app-7516649w-repo.git;
+        
+        targets=testsvr_7516649w.localdomain;
+        locate_script='/tmp/clone_7516649w/app-7516649w-repo/opr_script_7516649w';
+        
+        bolt script run $locate_script -t $targets -u clientadm -p user123 --no-host-key-check --run-as root;
           '''
 
         echo 'stg3_7516649w: testsvr is backup and updated'
