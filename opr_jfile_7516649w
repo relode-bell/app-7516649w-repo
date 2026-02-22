@@ -38,6 +38,8 @@ pipeline {
         
         puppet resource file /tmp/clone_7516649w ensure=absent force=true;
         puppet resource file /tmp/clone_7516649w ensure=directory;
+        mkdir -p /tmp/work/7516649w
+
         cd /tmp/clone_7516649w;
         
         git clone https://github.com/relode-bell/app-7516649w-repo.git;
