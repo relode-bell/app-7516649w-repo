@@ -94,31 +94,42 @@ pipeline {
         echo 'stg5_7516649w: appsvr web server is backup and updated'
       }
     }
-    stage('stg6-7516649w') {
-      steps {
-        sh '''#!/bin/bash
-          set -e
-          curl -Is http://localhost:33200 | head -n 1 > /tmp/appsvr-result-file
-          cat /tmp/appsvr-result-file
-          '''
-        script {
-          def line = sh(script: "cat /tmp/appsvr-result-file", returnStdout: true).trim()
-          if (line.contains("200")) {
-            echo "stg6_7516649w: appsvr website is operational"
-          } else {
-            def action = input(
-              message: "appsvr website is down. Choose an action:",
-              parameters: [choice(name: 'Action', choices: ['Trigger roll back', 'Troubleshooting'].join('\n'))]
+stage('stg6-7516649w') {
+  steps {
+    sh '''#!/bin/bash
+      set +e
+      curl -Is http://localhost:33200 | head -n 1 > /tmp/appsvr-result-file
+      cat /tmp/appsvr-result-file
+    '''
+
+    script {
+      def line = sh(script: "cat /tmp/appsvr-result-file", returnStdout: true).trim()
+
+      if (line.contains("200")) {
+        echo "stg6_7516649w: appsvr website is operational"
+      } else {
+        def userChoice = input(
+          message: "appsvr website is down. Choose an action:",
+          ok: "Proceed",
+          parameters: [
+            choice(
+              name: 'Action',
+              choices: "Trigger roll back\nTroubleshooting",
+              description: 'Select what you want to do next'
             )
-            if (action == 'Trigger roll back') {
-              echo "stg6_7516649w: Production website is rolling back"
-            } else if (action == 'Troubleshooting') {
-              echo "stg6_7516649w: Troubleshooting of Production website starts"
-            }
-            // Remark: Roll Back / Troubleshooting actual works is NOT required; pipeline ends here
-          }
+          ]
+        )
+        def action = (userChoice instanceof Map) ? userChoice['Action'] : userChoice
+
+        if (action == 'Trigger roll back') {
+          echo "stg6_7516649w: Production website is rolling back"
+        } else if (action == 'Troubleshooting') {
+          echo "stg6_7516649w: Troubleshooting of Production website starts"
         }
+        // Remark: Roll Back / Troubleshooting actual works is NOT required; pipeline ends here
       }
     }
+  }
+}
   }
 }
