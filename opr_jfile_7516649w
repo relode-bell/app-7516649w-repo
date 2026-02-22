@@ -45,8 +45,6 @@ pipeline {
         
         targets=testsvr_7516649w.localdomain;
         locate_script='/tmp/clone_7516649w/app-7516649w-repo/opr_script_7516649w';
-        bolt command run "sudo mkdir -p /tmp/work/7516649w && sudo chmod -R 777 /tmp/work" \
-        -t $targets -u clientadm -p user123 --no-host-key-check --run-as root;
 
         bolt script run $locate_script -t $targets -u clientadm -p user123 --no-host-key-check --run-as root;
           '''
