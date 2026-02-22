@@ -1,1 +1,18 @@
+#!/bin/bash
+set -e
 
+apt-get update -y
+puppet resource package git ensure=present
+puppet resource package apache2 ensure=present
+puppet resource service apache2 ensure=running enable=true
+
+puppet resource file /tmp/work/7516649w ensure=absent force=true
+puppet resource file /tmp/work/7516649w ensure=directory
+
+cd /tmp/work/7516649w
+
+git clone https://github.com/relode-bell/app-7516649w-repo.git
+
+cp -p /tmp/work/7516649w/app-7516649w-repo/new_7516649w_index.html /var/www/html/index.html
+
+systemctl restart apache2 || service apache2 restart
